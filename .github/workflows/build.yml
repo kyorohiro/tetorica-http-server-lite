@@ -2,12 +2,17 @@ name: Build
 
 on:
   push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
   pull_request:
   workflow_dispatch:
 
 jobs:
   build:
     name: ${{ matrix.target }}
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -49,3 +54,75 @@ jobs:
         with:
           name: ${{ matrix.target }}
           path: ${{ matrix.prefix }}
+
+  release:
+    name: Release ${{ matrix.target }}
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-windows-gnu
+            prefix: zig-out/x86_64-windows-gnu
+            asset_name: tetorica_http_server_lite-x86_64-windows-gnu.zip
+            binary_name: tetorica_http_server_lite.exe
+            archive_kind: zip
+          - os: ubuntu-latest
+            target: aarch64-windows-gnu
+            prefix: zig-out/aarch64-windows-gnu
+            asset_name: tetorica_http_server_lite-aarch64-windows-gnu.zip
+            binary_name: tetorica_http_server_lite.exe
+            archive_kind: zip
+          - os: ubuntu-latest
+            target: x86_64-linux-musl
+            prefix: zig-out/x86_64-linux-musl
+            asset_name: tetorica_http_server_lite-x86_64-linux-musl.tar.gz
+            binary_name: tetorica_http_server_lite
+            archive_kind: tar
+          - os: ubuntu-latest
+            target: aarch64-linux-musl
+            prefix: zig-out/aarch64-linux-musl
+            asset_name: tetorica_http_server_lite-aarch64-linux-musl.tar.gz
+            binary_name: tetorica_http_server_lite
+            archive_kind: tar
+          - os: macos-latest
+            target: aarch64-macos
+            prefix: zig-out/aarch64-macos
+            asset_name: tetorica_http_server_lite-aarch64-macos.tar.gz
+            binary_name: tetorica_http_server_lite
+            archive_kind: tar
+          - os: macos-latest
+            target: x86_64-macos
+            prefix: zig-out/x86_64-macos
+            asset_name: tetorica_http_server_lite-x86_64-macos.tar.gz
+            binary_name: tetorica_http_server_lite
+            archive_kind: tar
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.2
+
+      - name: Build
+        run: zig build -Dtarget=${{ matrix.target }} --prefix ${{ matrix.prefix }}
+
+      - name: Package tarball
+        if: ${{ matrix.archive_kind == 'tar' }}
+        run: tar -C ${{ matrix.prefix }}/bin -czf ${{ matrix.asset_name }} ${{ matrix.binary_name }}
+
+      - name: Package zip
+        if: ${{ matrix.archive_kind == 'zip' }}
+        run: zip -j ${{ matrix.asset_name }} ${{ matrix.prefix }}/bin/${{ matrix.binary_name }}
+
+      - name: Publish release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.asset_name }}
