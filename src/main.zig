@@ -47,7 +47,7 @@ fn listenOnAvailablePort(host: []const u8, start_port: u16, attempts: u16) !Boun
     }) {
         const address = try std.net.Address.parseIp4(host, port);
         const server = address.listen(.{
-            .reuse_address = true,
+            .reuse_address = false,
         }) catch |err| switch (err) {
             error.AddressInUse => continue,
             else => return err,
