@@ -1,6 +1,6 @@
 .{
     .name = .tetorica_http_server_lite,
-    .version = "0.0.4",
+    .version = "0.0.5",
     .fingerprint = 0xfef6bf1372f17b09,
     .minimum_zig_version = "0.15.2",
     .dependencies = .{},
