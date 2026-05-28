@@ -7,8 +7,21 @@ on:
   workflow_dispatch:
 
 jobs:
+  create_release:
+    name: Create release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: false
+
   release:
     name: Release ${{ matrix.target }}
+    needs: create_release
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -73,7 +86,7 @@ jobs:
         if: ${{ matrix.archive_kind == 'zip' }}
         run: zip -j ${{ matrix.asset_name }} ${{ matrix.prefix }}/bin/${{ matrix.binary_name }}
 
-      - name: Publish release asset
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ matrix.asset_name }}
+      - name: Upload release asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.ref_name }}" "${{ matrix.asset_name }}" --clobber
