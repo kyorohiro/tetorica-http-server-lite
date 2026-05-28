@@ -1,6 +1,25 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
+fn streamRead(stream: std.net.Stream, buf: []u8) !usize {
+    if (builtin.os.tag == .windows) {
+        const n = std.os.windows.ws2_32.recv(
+            stream.handle,
+            buf.ptr,
+            @intCast(buf.len),
+            0,
+        );
+
+        if (n == -1) {
+            return error.SocketReadFailed;
+        }
+
+        return @intCast(n);
+    } else {
+        return try stream.read(buf);
+    }
+}
+
 const Request = struct {
     method: []const u8,
     path: []const u8,
@@ -80,7 +99,8 @@ fn handleConnection(conn: std.net.Server.Connection) !void {
     defer conn.stream.close();
 
     var req_buf: [4096]u8 = undefined;
-    const n = try conn.stream.read(&req_buf);
+    const n = try streamRead(conn.stream, &req_buf);
+    // const n = try conn.stream.read(&req_buf);
     if (n == 0) return;
 
     const request = parseRequest(req_buf[0..n]) catch {
