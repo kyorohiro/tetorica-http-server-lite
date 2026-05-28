@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 const Request = struct {
     method: []const u8,
@@ -14,22 +15,65 @@ const ByteRange = struct {
     }
 };
 
-pub fn main() !void {
-    const address = try std.net.Address.parseIp4("127.0.0.1", 8080);
+const BoundServer = struct {
+    server: std.net.Server,
+    port: u16,
+};
 
-    var server = try address.listen(.{
-        .reuse_address = true,
-    });
+pub fn main() !void {
+    const bound = try listenOnAvailablePort("127.0.0.1", 8080, 32);
+    var server = bound.server;
     defer server.deinit();
 
-    std.debug.print("serving {s} at http://127.0.0.1:8080/\n", .{"."});
+    std.debug.print("serving {s} at http://127.0.0.1:{d}/\n", .{ ".", bound.port });
 
     while (true) {
         const conn = try server.accept();
         handleConnection(conn) catch |err| {
-            std.debug.print("connection error: {}\n", .{err});
+            if (!isIgnorableConnectionError(err)) {
+                std.debug.print("connection error: {}\n", .{err});
+            }
         };
     }
+}
+
+fn listenOnAvailablePort(host: []const u8, start_port: u16, attempts: u16) !BoundServer {
+    var port = start_port;
+    var remaining = attempts;
+
+    while (remaining > 0) : ({
+        remaining -= 1;
+        port +%= 1;
+    }) {
+        const address = try std.net.Address.parseIp4(host, port);
+        const server = address.listen(.{
+            .reuse_address = true,
+        }) catch |err| switch (err) {
+            error.AddressInUse => continue,
+            else => return err,
+        };
+
+        return .{
+            .server = server,
+            .port = port,
+        };
+    }
+
+    return error.AddressInUse;
+}
+
+fn isIgnorableConnectionError(err: anyerror) bool {
+    return switch (err) {
+        error.BrokenPipe,
+        error.ConnectionResetByPeer,
+        error.ConnectionTimedOut,
+        error.EndOfStream,
+        error.NotOpenForReading,
+        error.OperationAborted,
+        => true,
+        error.Unexpected => builtin.os.tag == .windows,
+        else => false,
+    };
 }
 
 fn handleConnection(conn: std.net.Server.Connection) !void {
