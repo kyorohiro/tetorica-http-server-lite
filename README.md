@@ -37,10 +37,15 @@ zig build -Dtarget=x86_64-macos --prefix zig-out/x86_64-macos
 zig build-exe src/main.zig -O ReleaseSmall -fstrip
 ```
 
-
 ```
 lipo -create \
   zig-out/aarch64-macos/bin/server \
   zig-out/x86_64-macos/bin/server \
   -output server-macos-universal
+```
+
+# Manual macOS signing
+
+```bash
+sh deploy_mac_cli.sh
 ```
