@@ -30,8 +30,28 @@ codesign \
   --sign "$APPLE_SIGNING_IDENTITY" \
   dist-cli2/tetorica_http_server_lite
 
+zip -j "tetorica_http_server_lite-${VERSION}-aarch64-macos.zip" dist-cli/tetorica_http_server_lite
+zip -j "tetorica_http_server_lite-${VERSION}-x86_64-macos.zip" dist-cli2/tetorica_http_server_lite
+
+xcrun notarytool submit "tetorica_http_server_lite-${VERSION}-aarch64-macos.zip" \
+  --apple-id "$APPLE_ID" \
+  --password "$APPLE_PASSWORD" \
+  --team-id "$APPLE_TEAM_ID" \
+  --wait
+
+xcrun notarytool submit "tetorica_http_server_lite-${VERSION}-x86_64-macos.zip" \
+  --apple-id "$APPLE_ID" \
+  --password "$APPLE_PASSWORD" \
+  --team-id "$APPLE_TEAM_ID" \
+  --wait
+
 tar -czf "tetorica_http_server_lite-${VERSION}-aarch64-macos.tar.gz" -C dist-cli tetorica_http_server_lite
 tar -czf "tetorica_http_server_lite-${VERSION}-x86_64-macos.tar.gz" -C dist-cli2 tetorica_http_server_lite
+
+codesign --verify --strict --verbose=2 dist-cli/tetorica_http_server_lite
+codesign --verify --strict --verbose=2 dist-cli2/tetorica_http_server_lite
+spctl -a -t exec -vv dist-cli/tetorica_http_server_lite
+spctl -a -t exec -vv dist-cli2/tetorica_http_server_lite
 
 shasum -a 256 "tetorica_http_server_lite-${VERSION}-aarch64-macos.tar.gz"
 shasum -a 256 "tetorica_http_server_lite-${VERSION}-x86_64-macos.tar.gz"
