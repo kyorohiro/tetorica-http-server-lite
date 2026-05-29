@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-export VERSION="0.0.6"
+export VERSION="0.0.7"
 export APPLE_SIGNING_IDENTITY="Developer ID Application: KIYOHIRO KAWAMURA (5H7KW7PC7C)"
 export APPLE_ID="kyorohiro@gmail.com"
 export APPLE_PASSWORD="<pass>"
@@ -30,20 +30,20 @@ codesign \
   --sign "$APPLE_SIGNING_IDENTITY" \
   dist-cli2/tetorica_http_server_lite
 
-zip -j "tetorica_http_server_lite-${VERSION}-aarch64-macos.zip" dist-cli/tetorica_http_server_lite
-zip -j "tetorica_http_server_lite-${VERSION}-x86_64-macos.zip" dist-cli2/tetorica_http_server_lite
-
-xcrun notarytool submit "tetorica_http_server_lite-${VERSION}-aarch64-macos.zip" \
-  --apple-id "$APPLE_ID" \
-  --password "$APPLE_PASSWORD" \
-  --team-id "$APPLE_TEAM_ID" \
-  --wait
-
-xcrun notarytool submit "tetorica_http_server_lite-${VERSION}-x86_64-macos.zip" \
-  --apple-id "$APPLE_ID" \
-  --password "$APPLE_PASSWORD" \
-  --team-id "$APPLE_TEAM_ID" \
-  --wait
+#zip -j "tetorica_http_server_lite-${VERSION}-aarch64-macos.zip" dist-cli/tetorica_http_server_lite
+#zip -j "tetorica_http_server_lite-${VERSION}-x86_64-macos.zip" dist-cli2/tetorica_http_server_lite
+#
+#xcrun notarytool submit "tetorica_http_server_lite-${VERSION}-aarch64-macos.zip" \
+#  --apple-id "$APPLE_ID" \
+#  --password "$APPLE_PASSWORD" \
+#  --team-id "$APPLE_TEAM_ID" \
+#  --wait
+#
+#xcrun notarytool submit "tetorica_http_server_lite-${VERSION}-x86_64-macos.zip" \
+#  --apple-id "$APPLE_ID" \
+#  --password "$APPLE_PASSWORD" \
+#  --team-id "$APPLE_TEAM_ID" \
+#  --wait
 
 tar -czf "tetorica_http_server_lite-${VERSION}-aarch64-macos.tar.gz" -C dist-cli tetorica_http_server_lite
 tar -czf "tetorica_http_server_lite-${VERSION}-x86_64-macos.tar.gz" -C dist-cli2 tetorica_http_server_lite
